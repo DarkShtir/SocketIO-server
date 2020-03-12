@@ -1,5 +1,6 @@
 const path = require('path');
 require('dotenv').config({ path: './config/dev.env' });
+const mongoose = require('mongoose');
 const io = require('socket.io')();
 const port = process.env.PORT || 8000;
 
@@ -8,6 +9,20 @@ const connection = [];
 io.sockets.on('connection', socket => {
 	console.log('Succesfull connection');
 	connection.push(socket);
+	socket.on('get dialogs', userId => {});
+	socket.on('create', room => {
+		socket.join(room);
+		console.log(`You are in room: ${room}`);
+		console.log('Enter');
+		console.log('Rooms', socket.adapter.rooms);
+	});
+
+	socket.on('leave', room => {
+		socket.leave(room);
+		console.log(`You are leaving room: ${room}`);
+		console.log('Exit');
+		console.log('Rooms', socket.adapter.rooms);
+	});
 
 	socket.on('disconnect', data => {
 		connection.splice(connection.indexOf(socket), 1);
@@ -43,3 +58,21 @@ io.sockets.on('connection', socket => {
 
 io.listen(port);
 console.log('listening on port ', port);
+
+async function start() {
+	try {
+		await mongoose.connect(process.env.MONGO_DB, {
+			useCreateIndex: true,
+			useNewUrlParser: true,
+			useFindAndModify: false,
+			useUnifiedTopology: true,
+		});
+
+		io.listen(port);
+		console.log('listening on port ', port);
+	} catch (error) {
+		console.log(error);
+	}
+}
+
+start();
