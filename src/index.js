@@ -1,6 +1,10 @@
 const path = require('path');
 require('dotenv').config({ path: './config/dev.env' });
 const mongoose = require('mongoose');
+
+const MessageService = require('./services/message-service');
+const message_service = new MessageService();
+
 const io = require('socket.io')();
 const port = process.env.PORT || 8000;
 
@@ -9,13 +13,40 @@ const connection = [];
 io.sockets.on('connection', socket => {
 	console.log('Succesfull connection');
 	connection.push(socket);
-	socket.on('get dialogs', userId => {});
-	socket.on('create', room => {
+
+	socket.on('create', async room => {
 		socket.join(room);
+		const messages = await message_service.getAllMessagesByDialogId(room);
+		socket.to(`${room}`).emit('add message', messages);
 		console.log(`You are in room: ${room}`);
 		console.log('Enter');
 		console.log('Rooms', socket.adapter.rooms);
 	});
+
+	socket.on('send message in Room', data => {
+		try {
+			socket.join(data.dialogId);
+			socket.to(`${data.dialogId}`).emit('add message', {
+				message: data.message,
+				name: data.name,
+				ownerId: data.ownerId,
+				dialogId: data.dialogId,
+			});
+			message_service.add(data);
+		} catch (error) {
+			console.log('Error in index.js', error);
+		}
+	});
+
+	// socket.on('get messages from Room', async room => {
+	// 	try {
+	// 		socket.join(room);
+	// 		const messages = await message_service.getAllMessagesByDialogId(room);
+	// 		socket.to(`${room}`).emit('add message from room', messages);
+	// 	} catch (error) {
+	// 		console.log('Error in index.js', error);
+	// 	}
+	// });
 
 	socket.on('leave', room => {
 		socket.leave(room);
