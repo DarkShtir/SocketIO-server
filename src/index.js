@@ -16,17 +16,17 @@ io.sockets.on('connection', socket => {
 
 	socket.on('create', async room => {
 		socket.join(room);
-		const messages = await message_service.getAllMessagesByDialogId(room);
-		socket.to(`${room}`).emit('add message', messages);
 		console.log(`You are in room: ${room}`);
-		console.log('Enter');
-		console.log('Rooms', socket.adapter.rooms);
+		// const messages = await message_service.getAllMessagesByDialogId(room);
+		// socket.to(`${room}`).emit('add message', messages);
+		// console.log('Enter');
+		// console.log('Rooms', socket.adapter.rooms);
 	});
 
 	socket.on('send message in Room', data => {
 		try {
 			socket.join(data.dialogId);
-			socket.to(`${data.dialogId}`).emit('add message', {
+			io.sockets.to(data.dialogId).emit('add message in room', {
 				message: data.message,
 				name: data.name,
 				ownerId: data.ownerId,
@@ -51,8 +51,8 @@ io.sockets.on('connection', socket => {
 	socket.on('leave', room => {
 		socket.leave(room);
 		console.log(`You are leaving room: ${room}`);
-		console.log('Exit');
-		console.log('Rooms', socket.adapter.rooms);
+		// console.log('Rooms', socket.adapter.rooms);
+		// console.log('Exit');
 	});
 
 	socket.on('disconnect', data => {
@@ -65,8 +65,9 @@ io.sockets.on('connection', socket => {
 			message: data.message,
 			name: data.name,
 			ownerId: data.ownerId,
-			// className: data.className,
+			// dialogId: 'chat-room',
 		});
+		// message_service.add(data);
 	});
 });
 
